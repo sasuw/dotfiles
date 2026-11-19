@@ -17,7 +17,10 @@ class DestinationTests(unittest.TestCase):
         self.root = Path(tempfile.mkdtemp(prefix='dotfiles-writer-test-'))
         self.home = self.root / 'home'
         self.home.mkdir()
-        self.env = dict(os.environ, HOME=str(self.home), ZDOTDIR=str(self.home),
+        # Parent tools may inject Git settings such as safe.bareRepository.
+        inherited = {key: value for key, value in os.environ.items()
+                     if not key.startswith('GIT_CONFIG') and key != 'GIT_OPTIONAL_LOCKS'}
+        self.env = dict(inherited, HOME=str(self.home), ZDOTDIR=str(self.home),
                         GIT_CONFIG_NOSYSTEM='1', GIT_CONFIG_GLOBAL=os.devnull,
                         GIT_AUTHOR_NAME='Test', GIT_COMMITTER_NAME='Test',
                         GIT_AUTHOR_EMAIL='test@example.invalid',
