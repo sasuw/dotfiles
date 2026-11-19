@@ -101,7 +101,10 @@ required by the dotfiles tree itself. Optional packages need their applications.
    exec zsh
    ```
 
-   Bash users run `exec bash` instead. After adding files, preview and restow
+   Bash users run `exec bash` instead. Interactive zsh adds `~/.bin` to PATH.
+   In another shell mode, use `"$HOME/.bin/command"` or configure PATH in
+   that shell's owning layer. Plain `bash -c` inherits its parent's PATH.
+   After adding files, preview and restow
    before reloading. For edits to already linked files, a new shell suffices.
    Set `DOTFILE_DIR` in the parent environment or in the optional
    `~/.shellinclude/00-personal-root.sh` when the generic checkout differs
