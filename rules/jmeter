@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# shellcheck source=common/bin/.bin/lib/dotfiles_root.sh
-source "${BASH_SOURCE[0]%/*}/../common/bin/.bin/lib/dotfiles_root.sh"
-dotfiles_init_root "${BASH_SOURCE[0]%/*}/.."
-source "${DOTFILE_DIR}/common/zsh/.zshvars"
+# shellcheck source=common/bin/.bin/lib/rule_context.sh
+source "${BASH_SOURCE[0]%/*}/../common/bin/.bin/lib/rule_context.sh" || exit 1
+dotfiles_rule_context "${BASH_SOURCE[0]%/*}/.." || exit 1
+dotfiles_rule_pin JMETER_VERSION || exit 1
 
-JMETER_DIR="/opt/apache-jmeter-${JMETER_VERSION}"
+JMETER_DIR="${JMETER_INSTALL_ROOT:-/opt}/apache-jmeter-${JMETER_VERSION}"
 
 if [[ -d "$JMETER_DIR" ]]; then
   export JMETER_DIR

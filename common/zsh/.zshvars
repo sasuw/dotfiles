@@ -1,4 +1,7 @@
 logger "ZDOT .zshvars started" 2>/dev/null || true
+# The single authoritative version pins. Rules (common/bin/.bin/lib/rule_context.sh)
+# and install tooling read these literal NAME=value lines without sourcing
+# this file: keep each one plain and unique.
 STOW_VERSION=2.4.1
 UNISON_VERSION=2.53.8
 JMETER_VERSION=5.6.3
