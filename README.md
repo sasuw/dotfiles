@@ -93,7 +93,7 @@ required by the dotfiles tree itself. Optional packages need their applications.
    do not prove ownership. Use the migration procedure below for old direct
    or folded Stow links. Do not use raw Stow to bypass stack ownership.
 
-3. Keep the common startup dependencies together: `.zshenv`, `.zshvars`,
+3. Keep the common startup dependencies together: `.zshenv`, `.zshvars`, `.zshversions`,
    `.zshrc`, `.bashrc`, `.bin/common.sh`, `.bin/lib/dotfiles_root.sh` and
    `.shellinclude/`. Then start the desired shell:
 
@@ -103,8 +103,11 @@ required by the dotfiles tree itself. Optional packages need their applications.
 
    Bash users run `exec bash` instead. After adding files, preview and restow
    before reloading. For edits to already linked files, a new shell suffices.
-   Export `DOTFILE_DIR` from the parent environment on each launch when the
-   generic checkout differs from the default, including paths with spaces.
+   Set `DOTFILE_DIR` in the parent environment or in the optional
+   `~/.shellinclude/00-personal-root.sh` when the generic checkout differs
+   from the default, including paths with spaces. A nonempty parent value
+   takes precedence. Discovery rules read version pins from their own source
+   checkout, regardless of `DOTFILE_DIR`.
    The prompt uses plain spacing when the character set is not UTF-8.
 
 ## How to add personal configuration

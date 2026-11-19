@@ -82,6 +82,7 @@ function source_all_sh_files_in_subdir_of_home() {
   local file
   for file in "$subdir"/*.sh "$subdir"/*.zsh; do
     [[ -e "$file" ]] || continue
+    [[ "$file" != "$HOME/.shellinclude/00-personal-root.sh" ]] || continue
     debug "Sourcing $file"
 
     if [[ "$DEBUG" == true ]]; then

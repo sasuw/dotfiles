@@ -1,7 +1,5 @@
 logger "ZDOT .zshvars started" 2>/dev/null || true
-STOW_VERSION=2.4.1
-UNISON_VERSION=2.53.8
-JMETER_VERSION=5.6.3
+. "$HOME/.zshversions"
 # The active lego (parts/lego, rules/lego): /opt/lego_v<version>_<os>_<arch>.
 # Installing another version under /opt changes nothing until this changes.
 # Update this pin only after validating the new installed version.

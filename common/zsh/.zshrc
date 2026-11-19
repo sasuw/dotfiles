@@ -6,7 +6,6 @@ logger "ZDOT .zshrc started" 2>/dev/null || true
 source_localenv_interactive_files
 
 # Optional personal settings load before prompt and generic snippets.
-[[ ! -r "$HOME/.shellinclude/00-personal-root.sh" ]] || source "$HOME/.shellinclude/00-personal-root.sh"
 [[ ! -r "$HOME/.shellinclude/01-personal-env.sh" ]] || source "$HOME/.shellinclude/01-personal-env.sh"
 
 # Lines configured by zsh-newuser-install
