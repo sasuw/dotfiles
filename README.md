@@ -121,7 +121,8 @@ add_function_for_cmd.sh --layer-root "$HOME/dotfiles" --no-git show_root 'git re
 
 Each writer also accepts `--file` for an explicit existing include. When both
 `--layer-root` and `--file` are supplied, the resolved file must be inside the
-selected root. `--dry-run` previews the change. Without `--no-git`, the writer
+selected root. A file in a Git checkout must belong to the selected layer's
+repository. `--dry-run` previews the change. Without `--no-git`, the writer
 stages, commits and pushes the selected file after Git checks pass.
 
 For a new application include, use

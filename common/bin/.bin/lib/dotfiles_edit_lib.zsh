@@ -4,7 +4,7 @@
 # localize these names in their calling function (zsh dynamic scope).
 
 dotfiles_edit_select_file() {
-  local layer="$1" file="$2" relative="$3" resolved_layer
+  local layer="$1" file="$2" relative="$3" resolved_layer owning_root
   [[ -n "$layer" || -n "$file" ]] || die 'specify --layer-root or --file'
   if [[ -n "$layer" ]]; then
     [[ -d "$layer" ]] || die 'layer root must be an existing directory'
@@ -13,8 +13,14 @@ dotfiles_edit_select_file() {
   fi
   [[ -f "$file" ]] || die "file not found: $file"
   dotfiles_edit_file="${file:A}"
-  if [[ -n "$layer" && "$dotfiles_edit_file" != "$resolved_layer/"* ]]; then
-    die 'FILE resolves outside the selected layer root'
+  if [[ -n "$layer" ]]; then
+    [[ "$dotfiles_edit_file" == "$resolved_layer/"* ]] \
+      || die 'FILE resolves outside the selected layer root'
+    if (( $+commands[git] )) &&
+       owning_root="$(git -C "${dotfiles_edit_file:h}" rev-parse --show-toplevel 2>/dev/null)"; then
+      [[ "${owning_root:A}" == "$resolved_layer" ]] \
+        || die 'FILE belongs to a different Git repository than the selected layer root'
+    fi
   fi
 }
 

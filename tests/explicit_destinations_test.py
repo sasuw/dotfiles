@@ -40,6 +40,39 @@ class DestinationTests(unittest.TestCase):
         self.git(self.layers['project'], 'remote', 'add', 'origin', str(remote))
         (self.layers['company'] / 'escape').symlink_to(self.layers['base'])
 
+    def test_nested_repository_is_a_different_layer(self):
+        outer = self.layers['company']
+        project = self.layers['project']
+        nested = outer / 'nested-project'
+        project.rename(nested)
+        remote = self.root / 'project-remote.git'
+        head = self.git(nested, 'rev-parse', 'HEAD')
+        outer_head = self.git(outer, 'rev-parse', 'HEAD')
+        outer_status = self.git(outer, 'status', '--porcelain')
+        cases = [
+            ('add_to_path.sh', 'common/shellutil/.shellinclude/path_additions.sh',
+             [self.home / 'private-tools']),
+            ('add_function_for_cmd.sh', 'common/alias/.shellinclude/aliases.sh',
+             ['fixture_cmd', 'print fixture']),
+        ]
+        for script, relative, args in cases:
+            target = nested / relative
+            original = target.read_bytes()
+            for flags in ([], ['--dry-run'], ['--no-git']):
+                with self.subTest(script=script, flags=flags):
+                    result = self.call(script, *flags, '--layer-root', outer,
+                                       '--file', target, *args)
+                    self.assertNotEqual(result.returncode, 0)
+                    self.assertIn('different Git repository', result.stderr)
+                    self.assertEqual(target.read_bytes(), original)
+                    self.assertEqual(self.git(nested, 'status', '--porcelain'), '')
+                    self.assertEqual(self.git(nested, 'rev-parse', 'HEAD'), head)
+                    self.assertEqual(self.git(outer, 'status', '--porcelain'), outer_status)
+                    self.assertEqual(self.git(outer, 'rev-parse', 'HEAD'), outer_head)
+                    self.assertEqual(self.git(remote, 'for-each-ref'), '')
+            result = self.call(script, '--dry-run', '--layer-root', nested, *args)
+            self.assertEqual(result.returncode, 0, result.stderr)
+
     def git(self, repo, *args):
         return subprocess.run(['git', '-C', str(repo), *args], env=self.env,
                               text=True, capture_output=True, check=True).stdout.strip()
