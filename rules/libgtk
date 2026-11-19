@@ -1,4 +1,4 @@
-#!/bin/zsh
+#!/bin/zsh -f
 
 # List of packages to check
 packages=("libgtk-3-dev" "gir1.2-gtk-3.0")

@@ -1,6 +1,6 @@
 #!/usr/bin/env zsh
 
-# Put the lego that LEGO_VERSION (.zshvars) names on PATH:
+# Put the lego that LEGO_VERSION (common/zsh/.zshvars, the only pin) names on PATH:
 # ${LEGO_INSTALL_ROOT:-/opt}/lego_v<version>_<os>_<arch>, the layout of the
 # upstream release archives. An explicit choice, not the newest install:
 # staging another version under /opt changes nothing until LEGO_VERSION

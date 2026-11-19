@@ -109,8 +109,11 @@ required by the dotfiles tree itself. Optional packages need their applications.
    Set `DOTFILE_DIR` in the parent environment or in the optional
    `~/.shellinclude/00-personal-root.sh` when the generic checkout differs
    from the default, including paths with spaces. A nonempty parent value
-   takes precedence. Discovery rules read version pins from their own source
-   checkout, regardless of `DOTFILE_DIR`.
+   takes precedence. Discovery reads literal version pins from the registered
+   source before any dotfiles are installed. Stow and JMeter use
+   `common/zsh/.zshversions`, and LEGO uses `common/zsh/.zshvars`.
+   Each tool defaults to an install under `/opt`. Set `STOW_INSTALL_ROOT`,
+   `JMETER_INSTALL_ROOT`, or `LEGO_INSTALL_ROOT` for a different install root.
    The prompt uses plain spacing when the character set is not UTF-8.
 
 ## How to add personal configuration

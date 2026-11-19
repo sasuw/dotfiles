@@ -1,3 +1,4 @@
+# Keep each pin a single literal assignment so discovery can read it.
 STOW_VERSION=2.4.1
 UNISON_VERSION=2.53.8
 JMETER_VERSION=5.6.3

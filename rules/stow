@@ -1,10 +1,12 @@
 #!/bin/bash
 
 # Directories to check
-# shellcheck source=common/zsh/.zshversions
-source "${BASH_SOURCE[0]%/*}/../common/zsh/.zshversions" || exit 1
+# shellcheck source=common/bin/.bin/lib/rule_context.sh
+source "${BASH_SOURCE[0]%/*}/../common/bin/.bin/lib/rule_context.sh" || exit 1
+dotfiles_rule_context "${BASH_SOURCE[0]%/*}/.." || exit 1
+dotfiles_rule_pin STOW_VERSION || exit 1
 
-DIR1="/opt/stow-${STOW_VERSION}"
+DIR1="${STOW_INSTALL_ROOT:-/opt}/stow-${STOW_VERSION}"
 
 if [[ -d "$DIR1" ]]; then
   exit 0
