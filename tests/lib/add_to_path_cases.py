@@ -260,15 +260,29 @@ class PathTests(unittest.TestCase):
                 self.assertEqual(result.returncode, 2)
                 self.assertIn("resolved DIRECTORY", result.stderr)
 
-    def test_stowed_symlink_discovers_default_file(self):
+    def test_stowed_symlink_uses_explicit_layer(self):
         script = self.init_git()
         stowed = self.home / ".bin/add_to_path.sh"
         stowed.parent.mkdir()
         stowed.symlink_to(script)
-        result = self.call([ZSH, "-f", stowed, "--no-git", self.directory()])
+        result = self.call([ZSH, "-f", stowed, "--no-git", "--layer-root", self.repo,
+                            self.directory()])
         self.success(result)
         self.assertIn("if [ -d", self.file.read_text())
         self.assertEqual(self.source(), f"/usr/bin:/bin:{self.home}/tools/bin")
+
+    def test_missing_and_mismatched_destination_refused_before_git(self):
+        script = self.init_git()
+        other = self.root / 'other'
+        other.mkdir()
+        before = self.file.read_bytes()
+        head = self.git('rev-parse', 'HEAD')
+        for options in ([], ['--layer-root', other, '--file', self.file]):
+            result = self.call([ZSH, '-f', script, *options, self.directory()])
+            self.assertNotEqual(result.returncode, 0)
+            self.assertEqual(self.file.read_bytes(), before)
+            self.assertEqual(self.git('rev-parse', 'HEAD'), head)
+            self.assertEqual(self.git('status', '--porcelain'), '')
 
     def test_git_publish_isolated_commit_and_saved_noop(self):
         self.init_git()

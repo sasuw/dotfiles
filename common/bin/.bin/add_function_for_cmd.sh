@@ -1,24 +1,20 @@
 #!/usr/bin/env zsh
 #
-# Append a shell function (or alias) for a command line to this dotfiles
-# repository's common/alias/.shellinclude/aliases.sh. See
-# add_function_for_cmd.sh --help.
+# Append a shell function (or alias) to an explicitly selected layer or file.
+# See add_function_for_cmd.sh --help.
 
 set -euo pipefail
 
 script_name="${0:t}"
-# The script is stowed as ~/.bin/<name> -> <repo>/common/bin/.bin/<name>;
-# :A resolves that link, so the repository is found from any working directory.
+# Resolve the stowed script link to locate the shared editing library.
 repo_root="${0:A:h:h:h:h}"
-default_file="$repo_root/common/alias/.shellinclude/aliases.sh"
 source "${0:A:h}/lib/dotfiles_edit_lib.zsh"
 
 usage() {
   cat <<HELP
 Usage: $script_name [OPTIONS] NAME COMMAND
 
-Append a function NAME that runs COMMAND to the shell include file
-(default: $default_file):
+Append a function NAME that runs COMMAND to an explicitly selected file:
 
   function NAME(){
     COMMAND
@@ -30,7 +26,8 @@ Options:
   -a, --alias      Write alias NAME='COMMAND' instead of a function
   -A, --pass-args  Append "\$@" to COMMAND, so NAME forwards its arguments
                    (a function only; an alias always forwards them)
-  -f, --file FILE  Write to FILE instead of the default file
+      --layer-root DIR  Select a layer and its standard aliases include
+  -f, --file FILE       Write to an explicit existing shell include file
       --force      Allow a NAME that is already a command, builtin, or
                    reserved word for zsh
   -n, --dry-run    Print the definition and target file; change nothing
@@ -44,7 +41,7 @@ push remote (falling back to origin). FILE must be tracked and unchanged.
 Reload interactive shells with soz afterwards.
 
 Example:
-  $script_name gitroot 'git rev-parse --show-toplevel'
+  $script_name --layer-root ~/dotfiles gitroot 'git rev-parse --show-toplevel'
 HELP
 }
 
@@ -71,6 +68,7 @@ find_definitions() {
 
 # The shell files of the repository that define functions and aliases.
 repo_shell_files() {
+  local repo_root="$1"
   local -a files
   files=(
     "$repo_root"/(common|parts)/**/.shellinclude/**/*(.N)
@@ -81,15 +79,28 @@ repo_shell_files() {
 }
 
 main() {
-  local as_alias=0 pass_args=0 force=0 dry_run=0 use_git=1 file="$default_file"
+  local as_alias=0 pass_args=0 force=0 dry_run=0 use_git=1 file='' layer='' file_set=0 layer_set=0
   while (( $# )); do
     case "$1" in
       -a|--alias) as_alias=1; shift ;;
       -A|--pass-args) pass_args=1; shift ;;
+      --layer-root)
+        (( $# >= 2 )) || usage_error "$1 needs a directory"
+        (( ! layer_set )) || usage_error 'layer root was specified more than once'
+        [[ -n "$2" ]] || usage_error 'layer root is empty'
+        layer_set=1
+        layer="$2"; shift 2 ;;
       -f|--file)
         (( $# >= 2 )) || usage_error "$1 needs a file"
+        (( ! file_set )) || usage_error 'file was specified more than once'
+        [[ -n "$2" ]] || usage_error 'file is empty'
+        file_set=1
         file="$2"; shift 2 ;;
-      --file=*) file="${1#--file=}"; shift ;;
+      --file=*)
+        (( ! file_set )) || usage_error 'file was specified more than once'
+        file="${1#--file=}"
+        [[ -n "$file" ]] || usage_error 'file is empty'
+        file_set=1; shift ;;
       --force) force=1; shift ;;
       -n|--dry-run) dry_run=1; shift ;;
       --no-git) use_git=0; shift ;;
@@ -105,14 +116,21 @@ main() {
   [[ "$name" =~ '^[A-Za-z_][A-Za-z0-9_.-]*$' ]] \
     || die "invalid name '$name': use letters, digits, '_', '.', '-', not starting with a digit, '.' or '-'"
   [[ "$cmd" == *[^[:space:]]* ]] || die 'COMMAND is empty'
-  [[ -f "$file" ]] || die "file not found: $file"
+  local dotfiles_edit_file dotfiles_edit_root dotfiles_edit_relative
+  local dotfiles_edit_branch dotfiles_edit_remote
+  dotfiles_edit_select_file "$layer" "$file" 'common/alias/.shellinclude/aliases.sh'
+  file="$dotfiles_edit_file"
+  local search_root="${layer:A}"
+  if [[ -z "$layer" ]]; then
+    search_root="$(git -C "${file:h}" rev-parse --show-toplevel 2>/dev/null)" || search_root="${file:h}"
+  fi
   if (( as_alias )); then
     (( ! pass_args )) || usage_error '--pass-args applies to functions only'
     [[ "$cmd" != *$'\n'* ]] || die 'an alias must be a single line; omit --alias for a function'
   fi
 
   local -a search_files
-  search_files=("$file" ${(f)"$(repo_shell_files)"})
+  search_files=("$file" ${(f)"$(repo_shell_files "$search_root")"} ${(f)"$(repo_shell_files "$repo_root")"})
   local existing
   if existing="$(find_definitions "$name" ${(u)search_files})"; then
     die "'$name' is already defined:"$'\n'"$existing"
@@ -147,8 +165,6 @@ main() {
     die "the result would not pass zsh -n; check the quoting of COMMAND:"$'\n'"$block"
   fi
 
-  local dotfiles_edit_file dotfiles_edit_root dotfiles_edit_relative
-  local dotfiles_edit_branch dotfiles_edit_remote
   if (( use_git )); then
     dotfiles_edit_prepare_git "$file"
     file="$dotfiles_edit_file"

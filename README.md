@@ -112,6 +112,22 @@ required by the dotfiles tree itself. Optional packages need their applications.
 
 ## How to add personal configuration
 
+Choose the destination when using configuration writers. For example:
+
+```sh
+add_to_path.sh --layer-root "$HOME/dotfiles" --no-git "$HOME/tools/bin"
+add_function_for_cmd.sh --layer-root "$HOME/dotfiles" --no-git show_root 'git rev-parse --show-toplevel'
+```
+
+Each writer also accepts `--file` for an explicit existing include. When both
+`--layer-root` and `--file` are supplied, the resolved file must be inside the
+selected root. `--dry-run` previews the change. Without `--no-git`, the writer
+stages, commits and pushes the selected file after Git checks pass.
+
+For a new application include, use
+`dotfiles_add_application_config <layer-root> <application-name> [config-name]`
+in an interactive shell. The layer's `parts/application` directory must exist.
+
 Create an empty private source before registering it, then add trusted
 personal packages under the same `common/`, `parts/` and `rules/` structure:
 

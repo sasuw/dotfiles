@@ -54,6 +54,23 @@ class StartupDiscoveryTest(unittest.TestCase):
             result = subprocess.run([str(ROOT / 'rules' / name)], env=self.env)
             self.assertEqual(result.returncode, 0 if installed.is_dir() else 1)
 
+    def test_application_creation_requires_explicit_layer_and_rejects_escape(self):
+        layer = self.home / 'company'
+        (layer / 'parts/application').mkdir(parents=True)
+        outside = self.home / 'outside'
+        outside.mkdir()
+        (layer / 'parts/application/escape').symlink_to(outside)
+        self.assertEqual(self.shell('dotfiles_add_application_config app >/dev/null 2>&1; print $?',
+                                    interactive=True), '1')
+        self.assertEqual(self.shell(f'dotfiles_add_application_config "{layer}" ../outside >/dev/null 2>&1; print $?',
+                                    interactive=True), '1')
+        self.assertEqual(self.shell(f'dotfiles_add_application_config "{layer}" escape >/dev/null 2>&1; print $?',
+                                    interactive=True), '1')
+        self.assertEqual(list(outside.iterdir()), [])
+        self.assertEqual(self.shell(f'dotfiles_add_application_config "{layer}" example >/dev/null; print $?',
+                                    interactive=True), '0')
+        self.assertTrue((layer / 'parts/application/example/default/.shellinclude/default_example.sh').is_file())
+
 
 if __name__ == '__main__':
     unittest.main()

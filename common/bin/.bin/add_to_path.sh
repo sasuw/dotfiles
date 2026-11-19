@@ -4,22 +4,21 @@
 set -euo pipefail
 
 script_name="${0:t}"
-repo_root="${0:A:h:h:h:h}"
-default_file="$repo_root/common/shellutil/.shellinclude/path_additions.sh"
 source "${0:A:h}/lib/dotfiles_edit_lib.zsh"
 
 usage() {
   cat <<HELP
 Usage: $script_name [OPTIONS] DIRECTORY
 
-Save a guarded PATH addition in $default_file.
+Save a guarded PATH addition in an explicitly selected layer or file.
 Append by default; existing PATH entries keep their position on reload.
 Relative directories are resolved against the current working directory.
 Paths under HOME are saved with a runtime HOME prefix; other text is literal.
 
 Options:
       --prepend   Add before existing PATH entries instead of after them
-  -f, --file FILE  Save to another existing shell include file
+      --layer-root DIR  Select a layer and its standard PATH include
+  -f, --file FILE       Save to an explicit existing shell include file
   -n, --dry-run    Preview the entry and Git actions; change nothing
       --no-git     Save only; skip staging, committing, and pushing
       --           End options; required before a DIRECTORY starting with -
@@ -31,8 +30,8 @@ An identical saved entry is a no-op; edit FILE to change saved ordering.
 Reload interactive zsh with soz afterwards. Other shells are not configured.
 
 Examples:
-  $script_name ~/tools/bin
-  $script_name --prepend /opt/example/bin
+  $script_name --layer-root ~/dotfiles ~/tools/bin
+  $script_name --file ~/private/paths.sh --prepend /opt/example/bin
 HELP
 }
 
@@ -71,14 +70,27 @@ fi"
 }
 
 main() {
-  local placement=append dry_run=0 use_git=1 file="$default_file"
+  local placement=append dry_run=0 use_git=1 file='' layer='' file_set=0 layer_set=0
   while (( $# )); do
     case "$1" in
       --prepend) placement=prepend; shift ;;
+      --layer-root)
+        (( $# >= 2 )) || usage_error "$1 needs a directory"
+        (( ! layer_set )) || usage_error 'layer root was specified more than once'
+        [[ -n "$2" ]] || usage_error 'layer root is empty'
+        layer_set=1
+        layer="$2"; shift 2 ;;
       -f|--file)
         (( $# >= 2 )) || usage_error "$1 needs a file"
+        (( ! file_set )) || usage_error 'file was specified more than once'
+        [[ -n "$2" ]] || usage_error 'file is empty'
+        file_set=1
         file="$2"; shift 2 ;;
-      --file=*) file="${1#--file=}"; shift ;;
+      --file=*)
+        (( ! file_set )) || usage_error 'file was specified more than once'
+        file="${1#--file=}"
+        [[ -n "$file" ]] || usage_error 'file is empty'
+        file_set=1; shift ;;
       -n|--dry-run) dry_run=1; shift ;;
       --no-git) use_git=0; shift ;;
       -h|--help) usage; return 0 ;;
@@ -93,7 +105,10 @@ main() {
   [[ -n "$directory" ]] || usage_error 'DIRECTORY is empty'
   [[ "$directory" != *:* && "$directory" != *$'\n'* && "$directory" != *$'\r'* ]] \
     || usage_error 'DIRECTORY must not contain colons or line breaks'
-  [[ -f "$file" ]] || die "file not found: $file"
+  local dotfiles_edit_file dotfiles_edit_root dotfiles_edit_relative
+  local dotfiles_edit_branch dotfiles_edit_remote
+  dotfiles_edit_select_file "$layer" "$file" 'common/shellutil/.shellinclude/path_additions.sh'
+  file="$dotfiles_edit_file"
 
   # :a makes a lexical absolute path without resolving symlinks (:A would).
   directory="${directory:a}"
@@ -132,8 +147,6 @@ main() {
     die 'the result would not pass zsh -n; changes were not saved'
   fi
 
-  local dotfiles_edit_file dotfiles_edit_root dotfiles_edit_relative
-  local dotfiles_edit_branch dotfiles_edit_remote
   if (( use_git )); then
     dotfiles_edit_prepare_git "$file"
     file="$dotfiles_edit_file"

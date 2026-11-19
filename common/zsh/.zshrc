@@ -539,7 +539,17 @@ function dotfiles_add_config(){
   local basedirpath="${1}"
   local dirname="${2}"
   local configname="${3:-default}"
+  if [[ ! -d "$basedirpath" || "$dirname" == */* || "$configname" == */* ||
+        "$dirname" == . || "$dirname" == .. || "$configname" == . || "$configname" == .. ]]; then
+    echo "Invalid destination or configuration name" >&2
+    return 1
+  fi
+  basedirpath="${basedirpath:A}"
   local newdir="${basedirpath}/${dirname}/${configname}/.shellinclude"
+  if [[ "${newdir:A}" != "$basedirpath/"* ]]; then
+    echo "Configuration resolves outside the selected directory" >&2
+    return 1
+  fi
 
   local filename
   if [[ $dirname == $configname ]]
@@ -562,16 +572,20 @@ function dotfiles_add_config(){
 }
 
 function dotfiles_add_application_config(){
-  if (( $# < 1 || $# > 2 )) || [[ -z $1 ]]; then
-    echo "Usage: dotfiles_add_application_config <application-name> [config-name]"
+  if (( $# < 2 || $# > 3 )) || [[ -z $1 || -z $2 || ! -d $1 ]]; then
+    echo "Usage: dotfiles_add_application_config <layer-root> <application-name> [config-name]"
     return 1
   fi
 
-  local dotfiledir="${DOTFILE_DIR:-$HOME/dotfiles}"
+  local dotfiledir="${1:A}"
   local applicationdir="${dotfiledir}/parts/application"
+  if [[ "${applicationdir:A}" != "$dotfiledir/"* ]]; then
+    echo "Application directory resolves outside the selected layer" >&2
+    return 1
+  fi
 
-  local dirname="${1}"
-  local configname="${2:-default}"
+  local dirname="${2}"
+  local configname="${3:-default}"
   dotfiles_add_config "${applicationdir}" "${dirname}" "${configname}"
 }
 

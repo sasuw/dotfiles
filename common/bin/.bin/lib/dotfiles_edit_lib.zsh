@@ -3,6 +3,21 @@
 # prepare sets dotfiles_edit_{file,root,relative,branch,remote}; consumers can
 # localize these names in their calling function (zsh dynamic scope).
 
+dotfiles_edit_select_file() {
+  local layer="$1" file="$2" relative="$3" resolved_layer
+  [[ -n "$layer" || -n "$file" ]] || die 'specify --layer-root or --file'
+  if [[ -n "$layer" ]]; then
+    [[ -d "$layer" ]] || die 'layer root must be an existing directory'
+    resolved_layer="${layer:A}"
+    [[ -n "$file" ]] || file="$resolved_layer/$relative"
+  fi
+  [[ -f "$file" ]] || die "file not found: $file"
+  dotfiles_edit_file="${file:A}"
+  if [[ -n "$layer" && "$dotfiles_edit_file" != "$resolved_layer/"* ]]; then
+    die 'FILE resolves outside the selected layer root'
+  fi
+}
+
 dotfiles_edit_prepare_git() {
   (( $+commands[git] )) || die 'git is required; use --no-git to append only'
   dotfiles_edit_file="${1:A}"
