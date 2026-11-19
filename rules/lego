@@ -1,0 +1,18 @@
+#!/bin/bash
+
+# Enable parts/lego when the lego that LEGO_VERSION (common/zsh/.zshvars)
+# names is installed. The rule sources the PATH snippet itself, so the rule
+# and the PATH entry always pick the same directory; a newer /opt/lego_v*
+# install (staging) is ignored until LEGO_VERSION changes.
+# shellcheck source=common/bin/.bin/lib/dotfiles_root.sh
+source "${BASH_SOURCE[0]%/*}/../common/bin/.bin/lib/dotfiles_root.sh"
+dotfiles_init_root "${BASH_SOURCE[0]%/*}/.."
+source "${DOTFILE_DIR}/common/zsh/.zshvars"
+source "${DOTFILE_DIR}/parts/lego/path/.shellinclude/path_lego.sh"
+
+if [[ -n "${LEGO_DIR:-}" && -x "${LEGO_DIR}/lego" ]]; then
+  export LEGO_DIR
+  exit 0
+else
+  exit 1
+fi

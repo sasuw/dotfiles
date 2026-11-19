@@ -1,0 +1,1 @@
+alias rmlintdirsmin="rmlint -D -T minimaldirs"

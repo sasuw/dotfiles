@@ -1,0 +1,23 @@
+#!/usr/bin/env zsh
+
+usage() {
+  cat <<'EOF'
+Usage: rules/wayland-tmux [-h|--help]
+
+Return 0 when running in a Wayland session and tmux is installed.
+Return 1 otherwise.
+EOF
+}
+
+case "${1:-}" in
+  -h|--help)
+    usage
+    exit 0
+    ;;
+esac
+
+if [[ ${XDG_SESSION_TYPE:-} == wayland ]] && command -v tmux >/dev/null 2>&1; then
+  exit 0
+fi
+
+exit 1

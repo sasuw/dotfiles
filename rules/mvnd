@@ -1,0 +1,17 @@
+#!/bin/bash
+
+# Prefer an mvnd already on PATH (e.g. installed via Homebrew), and fall back
+# to the versioned /opt install used on other hosts.
+MVND_VERSION="1.0.3"
+MVND_PATH="/opt/maven-mvnd-${MVND_VERSION}-linux-amd64"
+
+if command -v mvnd >/dev/null 2>&1; then
+  # Already on PATH; parts/mvnd only needs to add a bin dir when it is not.
+  exit 0
+elif [[ -d "$MVND_PATH" ]]; then
+  export MVND_VERSION
+  export MVND_PATH
+  exit 0
+else
+  exit 1
+fi

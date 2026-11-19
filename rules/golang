@@ -1,0 +1,11 @@
+#!/bin/bash
+
+# Directories to check
+DIR1="/usr/local/go"
+FILE1="/usr/local/bin/go"
+# Check if go directory exist
+if [[ -d "$DIR1" || -f "$FILE1" ]]; then
+  exit 0
+else
+  exit 1
+fi

@@ -1,0 +1,31 @@
+# -f: hooks need no rc files. Without it every hook shell reads ~/.zshenv,
+# and `tinty init` runs at every interactive shell start.
+shell = "zsh -f -c '{}'"
+default-scheme = "base16-atelier-savanna"
+
+# GNOME Terminal variant: shell escape sequences plus a matching terminal
+# profile.
+#
+# Hosts without GNOME Terminal get parts/tinty-headless/ instead, which omits
+# the base16-gnome-terminal item — an item whose repo is not installed makes
+# every `tinty apply` fail. Keep the shared parts of both config.toml files in
+# sync when changing either.
+
+[[items]]
+name = "tinted-shell"
+path = "https://github.com/tinted-theming/tinted-shell"
+themes-dir = "scripts"
+hook = "source \"$TINTY_THEME_FILE_PATH\""
+supported-systems = ["base16", "base24"]
+
+[[items]]
+name = "base16-gnome-terminal"
+path = "https://github.com/aaron-williamson/base16-gnome-terminal"
+themes-dir = "color-scripts"
+revision = "master"
+hook = "zsh -f ~/.config/tinted-theming/tinty/sync_gnome_terminal.sh"
+supported-systems = ["base16"]
+
+
+
+

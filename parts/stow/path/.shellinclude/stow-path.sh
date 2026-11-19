@@ -1,0 +1,1 @@
+export PATH="/opt/stow-${STOW_VERSION}/bin:$PATH"

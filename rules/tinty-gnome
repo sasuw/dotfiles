@@ -1,0 +1,14 @@
+#!/bin/bash
+
+# tinty config with the base16-gnome-terminal item: only on hosts that
+# actually have GNOME Terminal. Mutually exclusive with rules/tinty-headless.
+
+if ! command -v tinty >/dev/null 2>&1; then
+  exit 1
+fi
+
+if command -v gnome-terminal >/dev/null 2>&1 && command -v dconf >/dev/null 2>&1; then
+  exit 0
+else
+  exit 1
+fi

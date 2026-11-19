@@ -1,0 +1,8 @@
+common/unison/.unison/*
+!common/unison/.unison/*.prf
+common/emacs/.emacs.d/eln-cache
+.idea
+parts/application/mvn/settings/.m2/repository
+!.github/
+__pycache__/
+*.swp

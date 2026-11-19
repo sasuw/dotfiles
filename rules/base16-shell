@@ -1,0 +1,13 @@
+#!/bin/bash
+
+if command -v tinty >/dev/null 2>&1; then
+  exit 1
+fi
+
+BASE16_SHELL="$HOME/.config/base16-shell"
+if [[ -d "$BASE16_SHELL" ]]; then
+  exit 0
+else
+  exit 1
+fi
+

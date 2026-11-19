@@ -1,0 +1,3 @@
+# macOS only (parts/ostype/macos). uv verifies HTTPS against the macOS
+# trust store. Keep it current with OS security updates.
+system-certs = true

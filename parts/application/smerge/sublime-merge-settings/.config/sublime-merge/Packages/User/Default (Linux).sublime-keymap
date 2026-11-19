@@ -1,0 +1,7 @@
+[
+    {
+        "keys": ["ctrl+shift+o"], // Change this to your preferred shortcut
+        "command": "resolve_merge_conflict",
+        "args": {"resolution": "ours"}
+    }
+]

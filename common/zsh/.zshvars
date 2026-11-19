@@ -1,0 +1,14 @@
+logger "ZDOT .zshvars started" 2>/dev/null || true
+STOW_VERSION=2.4.1
+UNISON_VERSION=2.53.8
+JMETER_VERSION=5.6.3
+# The active lego (parts/lego, rules/lego): /opt/lego_v<version>_<os>_<arch>.
+# Installing another version under /opt changes nothing until this changes.
+# Update this pin only after validating the new installed version.
+LEGO_VERSION=4.33.0
+# The private root is optional; generic-only installations use ~/dotfiles.
+if ! command -v dotfiles_init_root >/dev/null 2>&1; then
+  # shellcheck source=common/bin/.bin/lib/dotfiles_root.sh
+  source "$HOME/.bin/lib/dotfiles_root.sh"
+fi
+dotfiles_init_root ""

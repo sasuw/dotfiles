@@ -1,0 +1,12 @@
+#!/bin/zsh
+
+# List of packages to check
+packages=("libgtk-3-dev" "gir1.2-gtk-3.0")
+
+for pkg in "${packages[@]}"; do
+    if dpkg -s "$pkg" &>/dev/null; then
+        exit 0
+    fi
+done
+
+exit 1

@@ -1,0 +1,9 @@
+scrollbar {
+  -GtkOverlayScrollbar-sliders-only: false;
+  -GtkScrollbar-has-backward-stepper: true;
+  -GtkScrollbar-has-forward-stepper: true;
+}
+
+scrollbar slider {
+ padding: 8px;
+}

@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# tinty config without the base16-gnome-terminal item, for servers and other
+# hosts with no GNOME Terminal. Mutually exclusive with rules/tinty-gnome:
+# both parts provide ~/.config/tinted-theming/tinty/config.toml.
+
+if ! command -v tinty >/dev/null 2>&1; then
+  exit 1
+fi
+
+if command -v gnome-terminal >/dev/null 2>&1 && command -v dconf >/dev/null 2>&1; then
+  exit 1
+else
+  exit 0
+fi

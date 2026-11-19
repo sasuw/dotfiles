@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# shellcheck source=common/bin/.bin/lib/dotfiles_root.sh
+source "${BASH_SOURCE[0]%/*}/../common/bin/.bin/lib/dotfiles_root.sh"
+dotfiles_init_root "${BASH_SOURCE[0]%/*}/.."
+source "${DOTFILE_DIR}/common/zsh/.zshvars"
+
+JMETER_DIR="/opt/apache-jmeter-${JMETER_VERSION}"
+
+if [[ -d "$JMETER_DIR" ]]; then
+  export JMETER_DIR
+  exit 0
+else
+  exit 1
+fi

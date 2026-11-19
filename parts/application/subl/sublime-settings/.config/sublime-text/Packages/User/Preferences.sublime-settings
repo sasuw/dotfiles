@@ -1,0 +1,19 @@
+{
+	"font_size": 12,
+	"word_wrap": "true",
+	"update_check": false,
+	"translate_tabs_to_spaces": true,
+	"detect_indentation": true,
+	"tab_size": 2,
+	"ignored_packages":
+	[
+		"Vintage",
+	],
+	"tab_completion": false,
+    "auto_complete_commit_on_tab": false,
+	"auto_complete_when_likely": false,
+	"auto_complete": false,
+	"index_files": true,
+	"ui_scale": 1.1,
+	"hardware_acceleration": true,
+}

@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# Directories to check
+# shellcheck source=common/bin/.bin/lib/dotfiles_root.sh
+source "${BASH_SOURCE[0]%/*}/../common/bin/.bin/lib/dotfiles_root.sh"
+dotfiles_init_root "${BASH_SOURCE[0]%/*}/.."
+source "${DOTFILE_DIR}/common/zsh/.zshvars"
+
+DIR1="/opt/stow-${STOW_VERSION}"
+
+if [[ -d "$DIR1" ]]; then
+  exit 0
+else
+  exit 1
+fi
