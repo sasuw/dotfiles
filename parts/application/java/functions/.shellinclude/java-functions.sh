@@ -9,7 +9,7 @@ print_war_jar_manifest() {
 
 java_comment_out_line_with_match() {
   local pattern_to_match="${1}"
-  rgl "^\s*${pattern_to_match}" | xargs sed -i "s/^\s*${pattern_to_match}/\/\/&/"
+  rg -l --sort=path "^\s*${pattern_to_match}" </dev/null | xargs sed -i "s/^\s*${pattern_to_match}/\/\/&/"
 }
 
 java_decompile(){
@@ -18,5 +18,5 @@ java_decompile(){
 }
 
 function java_find_field(){
-    rg -i "(private|public|byte|short|int|long|float|double|char|String|boolean).*$1;" | grep java | cut -d ":" -f1 | rev | cut -d "/" -f1 | rev | sort | uniq -c | column --table --table-columns COUNT,"JAVA CLASS"
+    rg -i "(private|public|byte|short|int|long|float|double|char|String|boolean).*$1;" </dev/null | grep java | cut -d ":" -f1 | rev | cut -d "/" -f1 | rev | sort | uniq -c | column --table --table-columns COUNT,"JAVA CLASS"
 }

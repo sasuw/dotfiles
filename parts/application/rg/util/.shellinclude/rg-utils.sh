@@ -2,13 +2,13 @@ rg_show_only_matches_uniq_sorted(){
 	local filename="${1}"
 	local search_term="${2}"
 	#-oIN=match only, no filename, no line numbers
-	rg --glob "${filename}" -oIN "${search_term}" | awk NF | sort | uniq
+	rg --glob "${filename}" -oIN "${search_term}" </dev/null | awk NF | sort | uniq
 }
 
 #find file with rg and open it with batcat
 rgb(){
 	local search_term="${1}"
-	rg -. -l --sort=path "${1}" | xargs -I{} batcat "{}"
+	rg -. -l --sort=path "${1}" </dev/null | xargs -I{} batcat "{}"
 }
 
 rgv() {

@@ -424,13 +424,13 @@ subdir_exec(){
 function grep2x(){
     local filestr=$1
     local linestr=$2
-    rg -l "${filestr}" | xargs -I"{}" grep -i "${linestr}" "{}"
+    rg -l "${filestr}" </dev/null | xargs -I"{}" grep -i "${linestr}" "{}"
 }
 
 function grep2x_java_no_tests(){
     local filestr=$1
     local linestr=$2
-    rg -l --glob '*.java' --glob '!*Test*.java' "${filestr}" | xargs -I"{}" grep -i "${linestr}" "{}"
+    rg -l --glob '*.java' --glob '!*Test*.java' "${filestr}" </dev/null | xargs -I"{}" grep -i "${linestr}" "{}"
 }
 
 find_functions_with_keyword() {
@@ -633,7 +633,7 @@ function find_alias_or_function_with_command_name(){
 
   local cmd_name="$1"
   local search_string="${aliases[$cmd_name]:-$cmd_name}"
-  rg -. -F --glob '*.sh' -- "$search_string"
+  rg -. -F --glob '*.sh' -- "$search_string" </dev/null
 }
 
 wait_for_keypress() {

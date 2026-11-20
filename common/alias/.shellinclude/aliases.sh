@@ -4,11 +4,11 @@ alias c='clear'
 alias x='exit'
 
 function aliases_find(){
-    rg. 'alias .* ?= ?.*[ $]?'
+    rg -. --sort=path 'alias .* ?= ?.*[ $]?' </dev/null
 }
 
 function alias_find_and_print_names_only(){
-    rg. -NI 'alias .* ?= ?.*[ $]?' | sed -e 's/alias //' -e 's/=.*//g' | sort | uniq
+    rg -. --sort=path -NI 'alias .* ?= ?.*[ $]?' </dev/null | sed -e 's/alias //' -e 's/=.*//g' | sort | uniq
 }
 
 alias c='clear'
@@ -131,7 +131,7 @@ alias rgl.="rg -l -. --sort=path"
 
 function rgl.os(){
     local search_term="${1}"
-    rg -l -. "${search_term}" --sort=path | xargs -I{} subl "{}"
+    rg -l -. "${search_term}" --sort=path </dev/null | xargs -I{} subl "{}"
 }
 
 function path_sort(){

@@ -10,7 +10,7 @@ usage() {
   cat <<HELP
 Usage: $script_name [OPTIONS] DIRECTORY
 
-Save a guarded PATH addition in an explicitly selected layer or file.
+Save a guarded PATH addition in an explicitly selected layer, source or file.
 Append by default; existing PATH entries keep their position on reload.
 Relative directories are resolved against the current working directory.
 Paths under HOME are saved with a runtime HOME prefix; other text is literal.
@@ -18,12 +18,19 @@ Paths under HOME are saved with a runtime HOME prefix; other text is literal.
 Options:
       --prepend   Add before existing PATH entries instead of after them
       --layer-root DIR  Select a layer and its standard PATH include
-  -f, --file FILE       Save to an explicit existing shell include file
+      --source ID       Select the layer root registered as source.ID in
+                        \${XDG_CONFIG_HOME:-\$HOME/.config}/dotfiletracker/config;
+                        its include is common/shellutil/.shellinclude/
+                        zz-ID-paths.sh if present, else path_additions.sh
+  -f, --file FILE       Save to an explicit existing shell include file;
+                        with --layer-root or --source, FILE must be inside
+                        that root and its Git repository
   -n, --dry-run    Preview the entry and Git actions; change nothing
       --no-git     Save only; skip staging, committing, and pushing
       --           End options; required before a DIRECTORY starting with -
   -h, --help       Show this help
 
+Name --layer-root, --source or --file; --source excludes --layer-root.
 By default FILE must be tracked and unchanged. Commit only FILE and push
 the current branch. Missing directories are saved but skipped at startup.
 An identical saved entry is a no-op; edit FILE to change saved ordering.
@@ -31,6 +38,7 @@ Reload interactive zsh with soz afterwards. Other shells are not configured.
 
 Examples:
   $script_name --layer-root ~/dotfiles ~/tools/bin
+  $script_name --source personal ~/tools/bin
   $script_name --file ~/private/paths.sh --prepend /opt/example/bin
 HELP
 }
@@ -70,27 +78,14 @@ fi"
 }
 
 main() {
-  local placement=append dry_run=0 use_git=1 file='' layer='' file_set=0 layer_set=0
+  local placement=append dry_run=0 use_git=1 file=''
+  local dotfiles_edit_layer_option='' dotfiles_edit_file_option='' dotfiles_edit_source_option=''
   while (( $# )); do
     case "$1" in
       --prepend) placement=prepend; shift ;;
-      --layer-root)
-        (( $# >= 2 )) || usage_error "$1 needs a directory"
-        (( ! layer_set )) || usage_error 'layer root was specified more than once'
-        [[ -n "$2" ]] || usage_error 'layer root is empty'
-        layer_set=1
-        layer="$2"; shift 2 ;;
-      -f|--file)
-        (( $# >= 2 )) || usage_error "$1 needs a file"
-        (( ! file_set )) || usage_error 'file was specified more than once'
-        [[ -n "$2" ]] || usage_error 'file is empty'
-        file_set=1
-        file="$2"; shift 2 ;;
-      --file=*)
-        (( ! file_set )) || usage_error 'file was specified more than once'
-        file="${1#--file=}"
-        [[ -n "$file" ]] || usage_error 'file is empty'
-        file_set=1; shift ;;
+      --layer-root|-f|--file|--file=*|--source|--source=*)
+        dotfiles_edit_parse_destination_option "$@"
+        shift "$REPLY" ;;
       -n|--dry-run) dry_run=1; shift ;;
       --no-git) use_git=0; shift ;;
       -h|--help) usage; return 0 ;;
@@ -105,9 +100,10 @@ main() {
   [[ -n "$directory" ]] || usage_error 'DIRECTORY is empty'
   [[ "$directory" != *:* && "$directory" != *$'\n'* && "$directory" != *$'\r'* ]] \
     || usage_error 'DIRECTORY must not contain colons or line breaks'
-  local dotfiles_edit_file dotfiles_edit_root dotfiles_edit_relative
+  local dotfiles_edit_file dotfiles_edit_layer dotfiles_edit_root dotfiles_edit_relative
   local dotfiles_edit_branch dotfiles_edit_remote
-  dotfiles_edit_select_file "$layer" "$file" 'common/shellutil/.shellinclude/path_additions.sh'
+  dotfiles_edit_select_file "$dotfiles_edit_layer_option" "$dotfiles_edit_file_option" \
+    'common/shellutil/.shellinclude/path_additions.sh' "$dotfiles_edit_source_option" paths
   file="$dotfiles_edit_file"
 
   # :a makes a lexical absolute path without resolving symlinks (:A would).

@@ -17,17 +17,17 @@ remains pending; compatible GNU tools may be needed.
 
 The overlay is implemented. Public
 [envmaker](https://github.com/sasuw/envmaker) is available; the reviewed version
-is `28b291e80ce14ae121b1ba6c9962d61052c802c4`. The dotfiles URL below is the
+is `e8e2e718d9415c7598d9e19baeb750263973c342`. The dotfiles URL below is the
 intended public destination; dotfiles publication and a literal fresh-install
 check remain release prerequisites. See envmaker's
-[Stow prerequisite guide](https://github.com/sasuw/envmaker/blob/28b291e80ce14ae121b1ba6c9962d61052c802c4/docs/prerequisites.md),
-[source registry reference](https://github.com/sasuw/envmaker/blob/28b291e80ce14ae121b1ba6c9962d61052c802c4/docs/source_registry.md),
-[migration guide](https://github.com/sasuw/envmaker/blob/28b291e80ce14ae121b1ba6c9962d61052c802c4/docs/migrate_overlay.md)
-and [state and recovery reference](https://github.com/sasuw/envmaker/blob/28b291e80ce14ae121b1ba6c9962d61052c802c4/docs/overlay_state.md).
+[Stow prerequisite guide](https://github.com/sasuw/envmaker/blob/e8e2e718d9415c7598d9e19baeb750263973c342/docs/prerequisites.md),
+[source registry reference](https://github.com/sasuw/envmaker/blob/e8e2e718d9415c7598d9e19baeb750263973c342/docs/source_registry.md),
+[migration guide](https://github.com/sasuw/envmaker/blob/e8e2e718d9415c7598d9e19baeb750263973c342/docs/migrate_overlay.md)
+and [state and recovery reference](https://github.com/sasuw/envmaker/blob/e8e2e718d9415c7598d9e19baeb750263973c342/docs/overlay_state.md).
 
 Use a disposable account for the first install. Review `common/`, `parts/`
 and `rules/` first: installed applications may select configuration
-automatically. Rules and discovery fallbacks execute even during inspection
+automatically. Rules and the `hostname` selector execute even during inspection
 and preview; sources must be trusted. No package manager or secret store is
 required by the dotfiles tree itself. Optional packages need their applications.
 
@@ -183,6 +183,24 @@ bash "$HOME/envmaker/envmaker.sh" \
 `--source` cannot be combined with `--dotfiles-dir`, which selects legacy
 single-root mode. `explain` describes selected and shadowed owners;
 `ls` describes recorded ownership, without rediscovery.
+
+With this registry, the configuration writers take a registered source ID
+instead of a path:
+
+```sh
+add_to_path.sh --source personal --no-git "$HOME/tools/bin"
+add_function_for_cmd.sh --source personal --no-git show_root 'git rev-parse --show-toplevel'
+```
+
+`--source personal` uses the root of `source.personal`. The writer expects
+`common/shellutil/.shellinclude/zz-personal-paths.sh` or
+`common/alias/.shellinclude/zz-personal-aliases.sh` there; without it, the
+standard `path_additions.sh` or `aliases.sh` of that source; otherwise it
+refuses. Create the include and track it, or pass `--file` with an include
+inside that source. The writers never choose a source by themselves, and
+`--source` cannot be combined with `--layer-root`. `add_function_for_cmd.sh`
+also refuses a name defined in any registered source, and refuses to run while
+the registry is invalid.
 
 ### Whole-file precedence
 

@@ -1,4 +1,4 @@
-"""Real CLI tests, private HOME/ZDOTDIR/Git config and local-only remotes.
+"""Real CLI tests, private HOME/ZDOTDIR/XDG/Git config, local-only remotes.
 
 Successful fixtures are removed; failed suites copy evidence to a sibling tree.
 Unexpected setup/runner exceptions keep the original. No startup files are sourced.
@@ -37,6 +37,8 @@ class PathTests(unittest.TestCase):
         self.env = {
             "HOME": str(self.home),
             "ZDOTDIR": str(self.zdotdir),
+            # Never the caller's source registry.
+            "XDG_CONFIG_HOME": str(self.root / "xdg_config"),
             "PATH": f"{tool_bin}:/usr/bin:/bin",
             "LC_ALL": "C",
             "GIT_CONFIG_NOSYSTEM": "1",

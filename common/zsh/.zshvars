@@ -1,5 +1,10 @@
 logger "ZDOT .zshvars started" 2>/dev/null || true
-. "$HOME/.zshversions"
+# Version pins live in .zshversions. Before a restow links ~/.zshversions,
+# read the copy next to the resolved .zshvars (zsh-only: %x is this file).
+zshversions_file="$HOME/.zshversions"
+[[ -r "$zshversions_file" ]] || zshversions_file="${${(%):-%x}:A:h}/.zshversions"
+. "$zshversions_file"
+unset zshversions_file
 # The active lego (parts/lego, rules/lego): /opt/lego_v<version>_<os>_<arch>.
 # Installing another version under /opt changes nothing until this changes.
 # Update this pin only after validating the new installed version.

@@ -6,10 +6,10 @@ function java_create_jars_for_main_classes(){
 	fi
 	fdfind --glob '*.jar' --max-depth 1 | xargs -I{} rm -f "{}"
 	mvn clean compile
-	rg -l -t java 'void main\(' | xargs -I {} basename "{}" | cut -d '.' -f1 | xargs -I{} cp -r "target/classes" "target/classes_{}"
+	rg -l -t java 'void main\(' </dev/null | xargs -I {} basename "{}" | cut -d '.' -f1 | xargs -I{} cp -r "target/classes" "target/classes_{}"
 	rm -rf target/classes
 	#rg -l -t java 'void main\(' | xargs -I {} basename "{}" | cut -d '.' -f1 | xargs -I{} echo 'jar cfe "{}.jar" $(fdfind "{}" src/main/java src/test/java | sed -e "s/\//\./g" | cut -d '.' -f 4- | rev | cut -d '.' -f2- | rev) -C target/classes_{} .' | zsh
-	rg -l -t java 'void main\(' | xargs -I {} basename "{}" | cut -d '.' -f1 | xargs -I{} echo 'jar cfe "{}.jar" $(fdfind "{}" src/main/java src/test/java | sed -e "s/\//\./g" | cut -d '.' -f 4- | rev | cut -d '.' -f2- | rev) -C target/classes_{} .' | tee /dev/tty | zsh
+	rg -l -t java 'void main\(' </dev/null | xargs -I {} basename "{}" | cut -d '.' -f1 | xargs -I{} echo 'jar cfe "{}.jar" $(fdfind "{}" src/main/java src/test/java | sed -e "s/\//\./g" | cut -d '.' -f 4- | rev | cut -d '.' -f2- | rev) -C target/classes_{} .' | tee /dev/tty | zsh
 	mv *.jar target/
 	echo -e '\nGenerated JAR files are in target/'
 }

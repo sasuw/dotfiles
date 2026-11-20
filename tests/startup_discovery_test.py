@@ -4,6 +4,7 @@
 import os
 from pathlib import Path
 import platform
+import shutil
 import subprocess
 import tempfile
 import unittest
@@ -15,6 +16,7 @@ ROOT = Path(__file__).resolve().parent.parent
 class StartupDiscoveryTest(unittest.TestCase):
     def setUp(self):
         self.home = Path(tempfile.mkdtemp(prefix='dotfiles-startup-test-'))
+        self.addCleanup(shutil.rmtree, self.home)
         (self.home / '.bin').mkdir()
         (self.home / '.shellinclude').mkdir()
         for name in ('.zshenv', '.zshrc', '.zshvars', '.zshversions'):
