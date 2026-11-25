@@ -1,7 +1,8 @@
 # Public scan policy reference
 
 `python3 -I scripts/scan_public.py --root .` runs the public gates locally.
-Requires Python 3 and Gitleaks 8.16.0 on PATH. CI installs the exact Go module
+Requires Python 3 and Gitleaks 8.16.0 on PATH. The runner does not check the
+Gitleaks version itself, so make sure the right one is found. CI installs the exact Go module
 version with `go install github.com/zricethezav/gitleaks/v8@v8.16.0` into a
 temporary bin directory. Local users can install that version into a private
 bin directory and pass its executable with `--gitleaks /absolute/executable`.
@@ -9,11 +10,14 @@ No private checkout, account, service or credentials are needed.
 
 The public runner checks the complete tree, including hidden files, docs,
 tests and workflows. Only root `.git` metadata is outside the content tree.
-Symlinks must resolve inside the tree; their text is checked and their regular
-targets are scanned too. Binary, non-UTF-8 and special files fail closed.
+Untracked and ignored files are scanned too, so a leftover
+`scripts/__pycache__/` makes the scan fail; run it on a fresh clone or a clean
+export. A structural failure prints a generic message without the path.
+Symlinks must resolve inside the tree; their text is checked for control
+characters and their regular targets are scanned too. Binary, non-UTF-8 and special files fail closed.
 The runner checks public instructions against their template.
 
-Before every release or re-export is accepted, a release agent also runs a
+Before every release or re-export is accepted, the maintainers also run a
 separate private privacy gate against the same candidate. That gate checks
 case-insensitive literal substrings in file and directory names, contents and
 symlink text. Its private term policy and tests are excluded from this tree.
@@ -25,8 +29,8 @@ default rules. The runner rejects alternative ignore files.
 
 The gate rejects paths Gitleaks 8.16.0 would silently omit: any nested `.git`,
 names containing `vendor`, `node_modules`, `package-lock.json` or
-`gitleaks.toml`, names ending in `go.mod`/`go.sum`, and names ending in
-`jpg`, `gif`, `doc`, `docx`, `zip`, `xls`, `pdf`, `bin`, `svg` or `socket`.
+`gitleaks.toml`, names ending in `go.mod`/`go.sum`, and file or symlink names
+ending in `jpg`, `gif`, `doc`, `docx`, `zip`, `xls`, `pdf`, `bin`, `svg` or `socket`.
 The matching is case-insensitive and substring-based, conservatively covering
 the scanner's default allowlist. Such paths fail even with neutral content.
 The retained extensionless `rules/verapdf` also ends in `pdf`; it receives a

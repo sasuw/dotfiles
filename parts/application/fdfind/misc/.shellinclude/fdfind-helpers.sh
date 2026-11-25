@@ -243,39 +243,98 @@ fd_videos(){
 	fdfind -e mp4 -e mkv -e webm -e avi -e mov -e flv -e wmv -e mpeg -e mpg -e 3gp -e mts
 }
 
-fd_shell_scripts() {
-  local -a opts paths
-  local pattern='.*\.[a-z]?sh$'
-  local got_user_pattern=
-  local arg
-
-  for arg in "$@"; do
-    if [[ $arg == -* ]]; then
-      opts+=("$arg")
-    elif [[ -e $arg ]]; then
-      paths+=("$arg")
-    elif [[ -z $got_user_pattern ]]; then
-      pattern=$arg
-      got_user_pattern=1
-    else
-      # Extra non-option: treat as path if it later exists, else warn
-      if [[ -e $arg ]]; then
-        paths+=("$arg")
-      else
-        print -u2 "warn: ignoring extra arg '$arg'"
-      fi
+# Run fdfind like `fd [OPTION...] [PATTERN] [PATH...]`, limited to regular
+# files whose name matches FILTER. A user pattern narrows the result through
+# --and. A single positional argument that names a directory is a path.
+_fd_filtered_search() {
+  local func_name=$1 filter=$2
+  shift 2
+  local arg pattern=. end_options=0 i
+  local -a opts positionals paths
+  while (( $# )); do
+    arg=$1
+    shift
+    if (( end_options )) || [[ $arg != -?* ]]; then
+      positionals+=("$arg")
+      continue
     fi
+    case $arg in
+      --)
+        end_options=1
+        ;;
+      -g|--glob|-F|--fixed-strings)
+        printf '%s: %s is not supported; the file filter is a regex.\n' "$func_name" "$arg" >&2
+        return 2
+        ;;
+      -x|--exec|-X|--exec-batch)
+        # The command runs until a literal ';' or the end of the arguments.
+        opts+=("$arg")
+        while (( $# )); do
+          opts+=("$1")
+          shift
+          [[ ${opts[-1]} != ';' ]] || break
+        done
+        ;;
+      --and|-d|--max-depth|--min-depth|--exact-depth|-E|--exclude|-t|--type|\
+      -e|--extension|-S|--size|--changed-within|--change-newer-than|--newer|\
+      --changed-after|--changed-before|--change-older-than|--older|-o|--owner|\
+      --format|--batch-size|--ignore-file|-c|--color|-j|--threads|\
+      --max-results|--base-directory|--path-separator|--search-path)
+        if (( ! $# )); then
+          printf '%s: %s needs a value.\n' "$func_name" "$arg" >&2
+          return 2
+        fi
+        opts+=("$arg" "$1")
+        shift
+        ;;
+      --*)
+        opts+=("$arg")
+        ;;
+      *)
+        # Short option cluster such as -HI or -Hd2.
+        opts+=("$arg")
+        for (( i = 2; i <= ${#arg}; i++ )); do
+          case ${arg[i]} in
+            g|F)
+              printf '%s: -%s is not supported; the file filter is a regex.\n' "$func_name" "${arg[i]}" >&2
+              return 2
+              ;;
+            d|E|t|e|S|o|c|j)
+              if (( i == ${#arg} )); then
+                if (( ! $# )); then
+                  printf '%s: -%s needs a value.\n' "$func_name" "${arg[i]}" >&2
+                  return 2
+                fi
+                opts+=("$1")
+                shift
+              fi
+              break
+              ;;
+          esac
+        done
+        ;;
+    esac
   done
 
-  (( ${#paths[@]} == 0 )) && paths=('.')
+  if (( ${#positionals} == 1 )) && [[ -d ${positionals[1]} ]]; then
+    paths=("${positionals[1]}")
+  elif (( ${#positionals} )); then
+    pattern=${positionals[1]}
+    paths=("${(@)positionals[2,-1]}")
+  fi
 
-  fdfind "${opts[@]}" -tf "$pattern" "${paths[@]}" | sort
+  setopt local_options pipefail
+  fdfind "${opts[@]}" -tf --and "$filter" -- "$pattern" "${paths[@]}" | sort
+}
+
+fd_shell_scripts() {
+  _fd_filtered_search fd_shell_scripts '.*\.[a-z]?sh$' "$@"
 }
 fd_sh(){
-  fd_shell_scripts "$@" .
+  fd_shell_scripts "$@"
 }
 fd_sh.(){
-  fd_shell_scripts -HI "$@" .
+  fd_shell_scripts -HI "$@"
 }
 
 fd_shell_script_file_access_flags(){
@@ -291,39 +350,14 @@ fd_fix_shell_scripts_without_execution_rights(){
 }
 
 fd_markdown_docs() {
-  local -a opts paths
-  local pattern='.*\.[a-z]?md$'
-  local got_user_pattern=
-  local arg
-
-  for arg in "$@"; do
-    if [[ $arg == -* ]]; then
-      opts+=("$arg")
-    elif [[ -e $arg ]]; then
-      paths+=("$arg")
-    elif [[ -z $got_user_pattern ]]; then
-      pattern=$arg
-      got_user_pattern=1
-    else
-      # Extra non-option: treat as path if it later exists, else warn
-      if [[ -e $arg ]]; then
-        paths+=("$arg")
-      else
-        print -u2 "warn: ignoring extra arg '$arg'"
-      fi
-    fi
-  done
-
-  (( ${#paths[@]} == 0 )) && paths=('.')
-
-  fdfind "${opts[@]}" -tf "$pattern" "${paths[@]}" | sort
+  _fd_filtered_search fd_markdown_docs '.*\.[a-z]?md$' "$@"
 }
 fd_md(){
-  fd_markdown_docs "$@" .
+  fd_markdown_docs "$@"
 }
 
 fd_md.(){
-  fd_markdown_docs -HI "$@" .
+  fd_markdown_docs -HI "$@"
 }
 
 fd_dirs_with_search_term(){

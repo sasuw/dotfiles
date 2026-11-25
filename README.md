@@ -1,37 +1,79 @@
 # Dotfiles
 
-A shell-first GNU Stow tree for Bash and zsh, with optional application and
-OS packages. Env maker selects packages and manages home links in an ordered
-`generic < personal` stack. `DOTFILE_DIR` names the generic shell checkout,
-not the ordered registry; its default is `$HOME/dotfiles`.
+A shell-first configuration tree for zsh and Bash: prompt, aliases, shell
+helpers, PATH handling, and optional settings for many command-line tools.
+It is applied with [envmaker](https://github.com/sasuw/envmaker), which links
+the right packages into your home directory with GNU Stow.
 
-## How to install
+You use this repository as the shared, generic layer. Your own settings go
+into a second, private repository that envmaker stacks on top, so you can
+update the generic layer without losing your changes.
 
-Requires Git, Bash, zsh, GNU Stow 2.4.1, Python 3, Perl 5.16+ for stack mode,
-and standard Unix tools (including `find`, `readlink`, `realpath`, `sort` and
-`xargs`). Env maker requires Stow specifically at
-`/opt/stow-2.4.1/bin/stow`; a `stow` found only on PATH is insufficient.
-The executable and its matching Perl modules must be installed together.
-Linux is the initial validation platform. Native macOS and FreeBSD validation
-remains pending; compatible GNU tools may be needed.
+## How it fits together
 
-The overlay is implemented. Public
-[envmaker](https://github.com/sasuw/envmaker) is available; the reviewed version
-is `e8e2e718d9415c7598d9e19baeb750263973c342`. The dotfiles URL below is the
-intended public destination; dotfiles publication and a literal fresh-install
-check remain release prerequisites. See envmaker's
-[Stow prerequisite guide](https://github.com/sasuw/envmaker/blob/e8e2e718d9415c7598d9e19baeb750263973c342/docs/prerequisites.md),
-[source registry reference](https://github.com/sasuw/envmaker/blob/e8e2e718d9415c7598d9e19baeb750263973c342/docs/source_registry.md),
-[migration guide](https://github.com/sasuw/envmaker/blob/e8e2e718d9415c7598d9e19baeb750263973c342/docs/migrate_overlay.md)
-and [state and recovery reference](https://github.com/sasuw/envmaker/blob/e8e2e718d9415c7598d9e19baeb750263973c342/docs/overlay_state.md).
+```mermaid
+flowchart LR
+    subgraph sources["Your checkouts"]
+        generic["~/dotfiles<br/>this repository<br/>(generic, lower priority)"]
+        personal["~/dotfiles-personal<br/>your private repository<br/>(optional, higher priority)"]
+    end
+    envmaker["envmaker<br/>selects packages and<br/>picks one owner per file"]
+    stow["GNU Stow 2.4.1"]
+    home[/"$HOME<br/>symlinks such as ~/.zshrc"/]
+    shell(["zsh or Bash<br/>reads the linked files"])
 
-Use a disposable account for the first install. Review `common/`, `parts/`
-and `rules/` first: installed applications may select configuration
-automatically. Rules and the `hostname` selector execute even during inspection
-and preview; sources must be trusted. No package manager or secret store is
-required by the dotfiles tree itself. Optional packages need their applications.
+    generic --> envmaker
+    personal --> envmaker
+    envmaker --> stow --> home --> shell
+```
 
-1. Clone the generic tree and envmaker:
+The tree uses envmaker's layout:
+
+| Directory                    | What it holds                                     | When it is linked                    |
+| ---------------------------- | ------------------------------------------------- | ------------------------------------ |
+| `common/`                    | zsh, Bash, aliases, shell helpers, XDG settings   | Always                               |
+| `parts/application/COMMAND/` | Settings for one command-line tool                | When `COMMAND` is installed          |
+| `parts/ostype/OS/`           | Settings for `linux`, `macos` or `bsd`            | On that operating system             |
+| `parts/NAME/`                | Larger optional setups, such as `nvm` or `golang` | When the script `rules/NAME` exits 0 |
+
+When both repositories provide the same file, for example `~/.zshrc`, your
+personal copy wins as a whole. See
+[Personal configuration](#add-your-personal-configuration).
+
+## Install
+
+### What you need
+
+- Git, zsh, Perl 5.16 or newer, and `hostname`. Bash is optional; it gets a
+  smaller setup than zsh (see [After the install](#after-the-install)).
+- Standard Unix tools, including `find`, `readlink` and `xargs`. Some helper
+  functions also use `realpath` and `sort`.
+- GNU Stow 2.4.1 installed at exactly `/opt/stow-2.4.1/bin/stow`, together
+  with its matching Perl modules. A `stow` found elsewhere on `PATH` is not
+  used.
+- For the checks only: Python 3 and Gitleaks 8.16.0.
+
+Linux is tested. macOS and FreeBSD have not been verified yet and may need GNU
+versions of some tools.
+
+Try the first install in a disposable user account, and read `common/`,
+`parts/` and `rules/` before you apply anything. Installed applications
+select their settings automatically. Rule scripts and the `hostname` command
+run even during a preview, so only use sources you trust. The tree needs no
+package manager and no secret store; optional packages need their
+applications.
+
+### Steps
+
+```mermaid
+flowchart LR
+    clone["1. Clone dotfiles<br/>and envmaker"] --> stow["2. Install and check<br/>GNU Stow 2.4.1"]
+    stow --> preview["3. Preview<br/>plan and --dry-run"]
+    preview --> apply["4. Apply<br/>execstow restow"]
+    apply --> shell["5. Start a new shell"]
+```
+
+1. Clone this repository and envmaker:
 
    ```bash
    git clone https://github.com/sasuw/dotfiles "$HOME/dotfiles"
@@ -39,15 +81,12 @@ required by the dotfiles tree itself. Optional packages need their applications.
    export DOTFILE_DIR="$HOME/dotfiles"
    ```
 
-   Follow the Stow prerequisite guide above: obtain the
-   `stow-2.4.1.tar.gz` release and its signature from GNU Stow downloads,
-   verify provenance using GNU's release instructions, and extract into a
-   new disposable build directory. Ensure Perl, `make`, a compiler and the
-   upstream build prerequisites are available. On a shared machine, an
-   operator approves any package installation first. No pinned Perl build
-   is required.
+   `DOTFILE_DIR` names this generic checkout. Its default is `$HOME/dotfiles`.
 
-   From the extracted, provenance-verified `stow-2.4.1` source, run:
+2. Install GNU Stow 2.4.1 under `/opt` as described in envmaker's
+   [Stow prerequisite guide](https://github.com/sasuw/envmaker/blob/02a190aff0b9de7fb8e04d7c081d401f830a787d/docs/prerequisites.md).
+   In short: download and verify `stow-2.4.1.tar.gz` from GNU, then in the
+   extracted source run:
 
    ```bash
    ./configure --prefix=/opt/stow-2.4.1
@@ -55,177 +94,246 @@ required by the dotfiles tree itself. Optional packages need their applications.
    sudo make install
    ```
 
-   Configure and build are unprivileged. Review upstream install behavior
-   before granting installation privileges. Env maker requires no manpage
-   links or system package metadata changes.
-
-   From the envmaker checkout, check the executable and matching modules:
+   Only the last command needs administrator rights. Then check that the
+   executable and its modules match. envmaker runs Stow with the Perl named on
+   the first line of the Stow executable, so run the probe with that Perl:
 
    ```bash
    cd "$HOME/envmaker"
    /opt/stow-2.4.1/bin/stow --version
-   perl bin/stow_probe.pl /opt/stow-2.4.1/bin/stow 2.4.1
+   head -n 1 /opt/stow-2.4.1/bin/stow
+   # Replace /usr/bin/perl with the interpreter that the previous line printed;
+   # for "#!/usr/bin/env perl", use perl.
+   /usr/bin/perl bin/stow_probe.pl /opt/stow-2.4.1/bin/stow 2.4.1
    ```
 
-   The JSON probe must report version `2.4.1` and an existing `Stow.pm`.
-   Copying only the executable or using unrelated module versions is
-   insufficient.
+   The probe prints JSON. It must report version `2.4.1` and an existing
+   `Stow.pm`.
 
-2. Use a one-source stack for a fresh home, so personal can be added later
-   without a legacy-link migration:
+3. Preview what will be linked. Use a one-source stack even if you have no
+   personal repository yet; you can add one later without migrating links:
 
    ```bash
    bash "$HOME/envmaker/envmaker.sh" --source generic="$DOTFILE_DIR" listdirs
    bash "$HOME/envmaker/envmaker.sh" --source generic="$DOTFILE_DIR" plan
    bash "$HOME/envmaker/envmaker.sh" --source generic="$DOTFILE_DIR" --dry-run execstow restow
+   ```
+
+   `listdirs` shows the selected directories, and `plan` shows which file
+   each link will point to. The preview checks selection and ownership but
+   does not run the full Stow simulation, so a successful preview is not a
+   guarantee. Files you edit between preview and apply are used as they are
+   at apply time.
+
+4. Apply, then list the links envmaker recorded:
+
+   ```bash
    bash "$HOME/envmaker/envmaker.sh" --source generic="$DOTFILE_DIR" execstow restow
    bash "$HOME/envmaker/envmaker.sh" ls
    ```
 
-   `listdirs` is source-qualified; `plan` reports selection. `ls` reports
-   recorded ownership after apply. Preview checks selection and ownership,
-   creates no persistent generation and runs no hooks. It reports
-   `stow_simulation: false`: a successful preview is not a completed Stow
-   simulation, and source edits between preview and apply remain live.
+   envmaker refuses to replace existing files or links it does not own.
+   Move such a file out of the way yourself, then apply again. Equal content
+   does not count as ownership. If your home already has links from an older
+   Stow setup, [migrate them](#move-from-existing-stow-links) instead. Do
+   not run plain `stow` to get around a refusal.
 
-   Existing files and unrelated links cause refusal. Inspect and preserve
-   each conflicting entry before explicitly relocating it. Equal contents
-   do not prove ownership. Use the migration procedure below for old direct
-   or folded Stow links. Do not use raw Stow to bypass stack ownership.
-
-3. Keep the common startup dependencies together: `.zshenv`, `.zshvars`, `.zshversions`,
-   `.zshrc`, `.bashrc`, `.bin/common.sh`, `.bin/lib/dotfiles_root.sh` and
-   `.shellinclude/`. Then start the desired shell:
+5. Start a new shell:
 
    ```bash
    exec zsh
    ```
 
-   Bash users run `exec bash` instead. Interactive zsh adds `~/.bin` to PATH.
-   In another shell mode, use `"$HOME/.bin/command"` or configure PATH in
-   that shell's owning layer. Plain `bash -c` inherits its parent's PATH.
-   After adding files, preview and restow
-   before reloading. For edits to already linked files, a new shell suffices.
-   Set `DOTFILE_DIR` in the parent environment or in the optional
-   `~/.shellinclude/00-personal-root.sh` when the generic checkout differs
-   from the default, including paths with spaces. A nonempty parent value
-   takes precedence. Discovery reads literal version pins from the registered
-   source before any dotfiles are installed. Stow and JMeter use
-   `common/zsh/.zshversions`, and LEGO uses `common/zsh/.zshvars`.
-   Each tool defaults to an install under `/opt`. Set `STOW_INSTALL_ROOT`,
-   `JMETER_INSTALL_ROOT`, or `LEGO_INSTALL_ROOT` for a different install root.
-   The prompt uses plain spacing when the character set is not UTF-8.
+   Bash users run `exec bash` instead.
 
-## How to add personal configuration
+### After the install
 
-Choose the destination when using configuration writers. For example:
+- zsh loads everything in `~/.shellinclude/`: first all `*.sh` files, then all
+  `*.zsh` files, each in name order. Bash does not read that directory; it
+  loads only `00-personal-root.sh`, `01-personal-env.sh`, `java-exports.sh`
+  and the Maven includes from it. The helper scripts below and
+  `zz-personal-settings.sh` therefore affect zsh only.
+- `.zshenv` loads `.zshvars`, `.zshversions`, `.bin/common.sh` and
+  `.bin/lib/dotfiles_root.sh`. If your personal repository overrides one of
+  these files, keep it compatible with the others.
+- Put early personal environment settings into
+  `~/.shellinclude/01-personal-env.sh`. Both shells load it before the prompt
+  is set up.
+- Interactive zsh adds `~/.bin` to `PATH`. In other shells, call
+  `"$HOME/.bin/command"` or set `PATH` yourself. `bash -c` inherits its
+  parent's `PATH`.
+- After you add files, preview and run `execstow restow` again before you
+  reload the shell. After editing files that are already linked, a new shell
+  is enough.
+- If your generic checkout is not at `$HOME/dotfiles`, set `DOTFILE_DIR` in
+  your environment or in `~/.shellinclude/00-personal-root.sh`. A value from
+  the environment wins. Paths with spaces work. zsh exports the result, so a
+  shell started from another one keeps the old value; change
+  `00-personal-root.sh` and then open a new terminal.
+- Tool versions are pinned in the tree: Stow and JMeter in
+  `common/zsh/.zshversions`, LEGO in `common/zsh/.zshvars`. The rule scripts
+  read the pins from their own repository, so they work before anything is
+  linked. If your personal repository overrides one of these files, the
+  generic rules still use the generic pins.
+- The optional `stow`, `jmeter` and `lego` parts expect
+  `/opt/stow-VERSION`, `/opt/apache-jmeter-VERSION` and
+  `/opt/lego_vVERSION_OS_ARCH/lego`. Set `STOW_INSTALL_ROOT`,
+  `JMETER_INSTALL_ROOT` or `LEGO_INSTALL_ROOT` to use another directory
+  instead of `/opt`, and export it both where you run envmaker and in your
+  shell, for example in `01-personal-env.sh`. `STOW_INSTALL_ROOT` only changes
+  the Stow that the `stow` part adds to `PATH`; envmaker itself always uses
+  `/opt/stow-2.4.1/bin/stow`.
+- In zsh, the prompt uses plain spacing when the character set is not UTF-8.
+  The Bash prompt always uses a thin Unicode space and needs a UTF-8 locale.
 
-```sh
-add_to_path.sh --layer-root "$HOME/dotfiles" --no-git "$HOME/tools/bin"
-add_function_for_cmd.sh --layer-root "$HOME/dotfiles" --no-git show_root 'git rev-parse --show-toplevel'
+## Add your personal configuration
+
+```mermaid
+flowchart LR
+    subgraph generic["generic: ~/dotfiles"]
+        g_zshrc[".zshrc"]
+        g_alias[".shellinclude/aliases.sh"]
+    end
+    subgraph personal["personal: ~/dotfiles-personal"]
+        p_zshrc[".zshrc"]
+        p_settings[".shellinclude/zz-personal-settings.sh"]
+    end
+    subgraph home["$HOME"]
+        h_zshrc["~/.zshrc"]
+        h_alias["~/.shellinclude/aliases.sh"]
+        h_settings["~/.shellinclude/zz-personal-settings.sh"]
+    end
+    h_zshrc -->|links to| p_zshrc
+    h_alias -->|links to| g_alias
+    h_settings -->|links to| p_settings
+    g_zshrc -.-|hidden| p_zshrc
 ```
 
-Each writer also accepts `--file` for an explicit existing include. When both
-`--layer-root` and `--file` are supplied, the resolved file must be inside the
-selected root. A file in a Git checkout must belong to the selected layer's
-repository. `--dry-run` previews the change. Without `--no-git`, the writer
-stages, commits and pushes the selected file after Git checks pass.
+1. Create an empty private repository with the same layout:
 
-For a new application include, use
-`dotfiles_add_application_config <layer-root> <application-name> [config-name]`
-in an interactive shell. The layer's `parts/application` directory must exist.
+   ```bash
+   bash "$HOME/envmaker/envmaker.sh" init "$HOME/dotfiles-personal"
+   ```
 
-Create an empty private source before registering it, then add trusted
-personal packages under the same `common/`, `parts/` and `rules/` structure:
+   This runs `git init` locally. It creates no remote and publishes nothing.
+   Keep credentials out of Git.
 
-```bash
-bash "$HOME/envmaker/envmaker.sh" init "$HOME/dotfiles-personal"
-```
+2. Register both repositories, lowest priority first. Keep a copy of any
+   existing configuration, then put these lines into
+   `${XDG_CONFIG_HOME:-$HOME/.config}/dotfiletracker/config` (create the
+   directory if needed):
 
-This initializes local Git; it creates no remote and publishes nothing.
-Keep credentials outside Git. Every registered root must exist.
+   ```text
+   source.generic="$HOME/dotfiles"
+   source.personal="$HOME/dotfiles-personal"
+   ```
 
-Preserve existing configuration, then edit
-`${XDG_CONFIG_HOME:-$HOME/.config}/dotfiletracker/config` to contain these
-ordered entries (create the parent directory if absent):
+   Remove an old `dotfiles_dir` line; envmaker refuses a file that has both.
+   The file is data, not shell code: only a leading `~`, `$HOME` or `${HOME}`
+   is expanded. To keep only the generic layer, keep just the first line.
+   Every registered directory must exist.
 
-```text
-source.generic="$HOME/dotfiles"
-source.personal="$HOME/dotfiles-personal"
-```
+3. Add packages under `common/`, `parts/` and `rules/` of your personal
+   repository, as in this one. Then preview and apply the stack:
 
-Replace the legacy `dotfiles_dir` entry rather than keeping it alongside
-sources. Configuration is data, not shell code: only a leading `~`, `$HOME`
-or `${HOME}` expands; other variables and command substitutions stay literal.
-For a generic-only persistent registry, keep just the first source line.
+   ```bash
+   bash "$HOME/envmaker/envmaker.sh" listdirs
+   bash "$HOME/envmaker/envmaker.sh" plan
+   bash "$HOME/envmaker/envmaker.sh" explain .zshrc
+   bash "$HOME/envmaker/envmaker.sh" --dry-run execstow restow
+   bash "$HOME/envmaker/envmaker.sh" execstow restow
+   bash "$HOME/envmaker/envmaker.sh" ls
+   exec zsh
+   ```
 
-Inspect and reconcile the configured stack:
+   `explain` shows which repository provides a file and which copies it
+   hides. `ls` shows the recorded links without looking at the repositories
+   again.
 
-```bash
-bash "$HOME/envmaker/envmaker.sh" listdirs
-bash "$HOME/envmaker/envmaker.sh" plan
-bash "$HOME/envmaker/envmaker.sh" explain .zshrc
-bash "$HOME/envmaker/envmaker.sh" --dry-run execstow restow
-bash "$HOME/envmaker/envmaker.sh" execstow restow
-bash "$HOME/envmaker/envmaker.sh" ls
-exec zsh
-```
+   For a single run, repeated `--source ID=PATH` options replace the whole
+   configured list, in order:
 
-For one invocation, repeated `--source ID=PATH` replaces the **entire**
-configured list in order; it never appends implicitly:
+   ```bash
+   bash "$HOME/envmaker/envmaker.sh" \
+     --source generic="$DOTFILE_DIR" \
+     --source personal="$HOME/dotfiles-personal" explain .zshrc
+   ```
 
-```bash
-bash "$HOME/envmaker/envmaker.sh" \
-  --source generic="$DOTFILE_DIR" \
-  --source personal="$HOME/dotfiles-personal" explain .zshrc
-```
+   `--source` cannot be combined with `--dotfiles-dir`, which selects
+   envmaker's single-repository mode.
 
-`--source` cannot be combined with `--dotfiles-dir`, which selects legacy
-single-root mode. `explain` describes selected and shadowed owners;
-`ls` describes recorded ownership, without rediscovery.
+### Which copy wins
 
-With this registry, the configuration writers take a registered source ID
-instead of a path:
+- The higher repository wins a whole file, even if both copies are
+  identical. If you copied a file into your personal repository and never
+  changed it, later generic updates to that file do not reach you.
+- Files are not merged. Editing `~/.zshrc` edits the copy that currently wins.
+  An editor that replaces the link with a regular file makes envmaker refuse
+  the next apply until you move that file.
+- Delete, ignore or deselect your personal copy, and the next apply links the
+  generic one again. An empty personal repository changes nothing.
+- Removing a repository from the list removes its recorded links on the next
+  apply. This is not a general cleanup of your home directory.
+- Two copies of the same file in one repository, or a file in one repository
+  where the other has a directory, are errors. Package names do not affect
+  priority.
+- Rules and hooks belong to their own repository. A rule in one repository
+  never disables a package in the other. Hooks run in repository order; hooks
+  with the same name run in both.
+- For personal zsh settings, use
+  `common/personal/.shellinclude/zz-personal-settings.sh` in your personal
+  repository. Its name makes it load after the generic `*.sh` includes, but
+  before the generic `*.zsh` includes and before the rest of `.zshrc`. Bash
+  does not load it.
+
+### Helper scripts that write configuration
+
+`add_to_path.sh` adds a directory to `PATH`, and `add_function_for_cmd.sh`
+adds a shell function. With the stack registered, tell them which repository
+to change:
 
 ```sh
 add_to_path.sh --source personal --no-git "$HOME/tools/bin"
 add_function_for_cmd.sh --source personal --no-git show_root 'git rev-parse --show-toplevel'
 ```
 
-`--source personal` uses the root of `source.personal`. The writer expects
-`common/shellutil/.shellinclude/zz-personal-paths.sh` or
-`common/alias/.shellinclude/zz-personal-aliases.sh` there; without it, the
-standard `path_additions.sh` or `aliases.sh` of that source; otherwise it
-refuses. Create the include and track it, or pass `--file` with an include
-inside that source. The writers never choose a source by themselves, and
-`--source` cannot be combined with `--layer-root`. `add_function_for_cmd.sh`
-also refuses a name defined in any registered source, and refuses to run while
-the registry is invalid.
+- `--source personal` writes into the root of `source.personal`.
+  `add_to_path.sh` uses `common/shellutil/.shellinclude/zz-personal-paths.sh`
+  there if it exists, otherwise `path_additions.sh` in the same directory.
+  `add_function_for_cmd.sh` uses
+  `common/alias/.shellinclude/zz-personal-aliases.sh`, otherwise `aliases.sh`.
+  If neither exists, the helper refuses. Create and commit that file first,
+  or pass `--file` with a file inside that repository.
+- Without a registered stack, use `--layer-root "$HOME/dotfiles"` instead of
+  `--source`. `--source` and `--layer-root` cannot be combined. With both
+  `--layer-root` and `--file`, the file must be inside that root and belong
+  to its Git repository.
+- `--dry-run` shows the change. Without `--no-git`, the helper stages,
+  commits and pushes the changed file. Before that it checks that the file is
+  tracked and unchanged, that the branch is not detached and that a push
+  remote exists; a `--dry-run` without `--no-git` runs these checks too.
+- `add_function_for_cmd.sh` refuses a function name that its own repository
+  or any registered repository already defines in its shell startup files or
+  includes, and a name that is already a zsh command or builtin unless you
+  pass `--force`. It refuses to run while the registry is invalid, whichever
+  destination option you use. The helpers never pick a repository on their
+  own.
 
-### Whole-file precedence
+For a new application include, run
+`dotfiles_add_application_config <layer-root> <application-name> [config-name]`
+in an interactive zsh. It creates
+`parts/application/APP/CONFIG/.shellinclude/CONFIG_APP.sh`, or `APP.sh` when
+`CONFIG` equals `APP` (`CONFIG` defaults to `default`). It never overwrites a
+file and does not touch Git. The repository
+needs a `parts/application` directory; without it the function only reports
+"Invalid destination or configuration name".
 
-The later source wins the whole home target, even when its bytes are equal.
-An unchanged full personal fork shadows later generic edits. There is no
-content merge or copy-on-write: edits through home links reach the winning
-source. An editor that replaces a link can break ownership and cause refusal.
-Removing, ignoring or deactivating a personal entry restores a selected generic
-entry on reconciliation; absence is inheritance, not a suppression marker.
-An empty optional personal source also inherits. Explicitly reducing the stack
-can remove obsolete recorded owned links; this is not general home cleanup.
+## Move from existing Stow links
 
-Same-source duplicates and file/directory conflicts fail. Package names do
-not set priority. Rules and hooks stay source-local. Hooks run in source
-order; identical hook names run in both sources. Rules in one source never
-disable another source's entries. An optional
-`common/personal/.shellinclude/zz-personal-settings.sh` can hold zsh settings
-loaded after generic snippets. Bash needs Bash-compatible startup includes.
-
-## How to migrate existing direct or folded links
-
-Register the old owning root first, using the ordered configuration above.
-Ordinary stack apply refuses to adopt old direct/folded links or unrelated
-links. `generic` below is correct only if that registered source owns the
-old links; otherwise use its actual source ID:
+If your home already has links from plain Stow or from envmaker's
+single-repository mode, register the repository that owns them first, as
+above. A normal apply refuses to take over such links. Then migrate them.
+Replace `generic` with the ID of the repository that owns the old links:
 
 ```bash
 bash "$HOME/envmaker/envmaker.sh" --yes --dry-run migrate --from generic
@@ -233,53 +341,66 @@ bash "$HOME/envmaker/envmaker.sh" --yes migrate --from generic
 bash "$HOME/envmaker/envmaker.sh" ls
 ```
 
-Migration checks exact relative Stow link text into selected packages of
-that source. Equal contents or an absolute link do not qualify. There is a
-non-atomic unlink/relink interval; failure after unlink requires recovery.
-After success, use ordinary stack preview and `execstow restow` for updates.
+Only exact relative Stow links into selected packages of that repository
+qualify; equal content or an absolute link does not. The switch is not
+atomic: if it stops after the old links were removed, recover as described
+below. After a successful migration, use the normal preview and
+`execstow restow` for updates.
 
-## How to recover an interrupted operation
+## Recover an interrupted operation
 
-Keep HOME and XDG_STATE_HOME consistent with the original operation. Inspect
-before choosing a recovery action:
+```mermaid
+flowchart LR
+    stopped(["Apply or migration<br/>was interrupted"]) --> inspect["recover inspect<br/>read the report"]
+    inspect --> resume["recover resume<br/>finish the new state"]
+    inspect --> restore["recover restore<br/>go back to the old links"]
+```
+
+Keep `HOME` and `XDG_STATE_HOME` as they were for the interrupted run, and
+read the report first:
 
 ```bash
 bash "$HOME/envmaker/envmaker.sh" recover inspect
 ```
 
-After inspecting the report, a human chooses **one** action:
+Then choose **one** action:
 
-- Finish the recorded new generation (requires its recorded source inputs):
+```bash
+# Finish the recorded new state (needs the recorded repositories):
+bash "$HOME/envmaker/envmaker.sh" recover resume
 
-  ```bash
-  bash "$HOME/envmaker/envmaker.sh" recover resume
-  ```
+# Or put back the previous links or the original migrated links:
+bash "$HOME/envmaker/envmaker.sh" recover restore
+```
 
-- Or restore the old generation or original migration links:
-
-  ```bash
-  bash "$HOME/envmaker/envmaker.sh" recover restore
-  ```
-
-Restore can reinstate recorded links with unavailable sources; those links
-may dangle until the sources return. Preserve journals, generations, lock
-metadata and unrelated human replacements. Recovery refuses unrelated
-replacements and live recorded processes. Do not automatically rerun a
-failed operation, force adoption, edit state or delete locks to bypass it.
+`restore` also works when a repository is missing; the restored links then
+point nowhere until it is back. Recovery refuses to touch files that someone
+replaced and refuses while a recorded process is still running. Do not delete
+envmaker's journal, state or lock files, and do not rerun a failed operation
+blindly. envmaker's
+[state and recovery reference](https://github.com/sasuw/envmaker/blob/02a190aff0b9de7fb8e04d7c081d401f830a787d/docs/overlay_state.md)
+and [migration guide](https://github.com/sasuw/envmaker/blob/02a190aff0b9de7fb8e04d7c081d401f830a787d/docs/migrate_overlay.md)
+have the details.
 
 ## Checks and license
 
-Run `bash tests/add_to_path_test.sh` for the retained PATH helper suite.
-Run `python3 -I scripts/scan_public.py --root .` with Gitleaks 8.16.0 for the
-same content gates as CI. See [scan policy](docs/public_scan.md) for coverage,
-exceptions and tool setup. Check changed shell files with `bash -n`,
-`shellcheck` or `zsh -n` as appropriate. There is no compilation step.
+Before you send a change, run:
 
-Before accepting a release or re-export, a release agent must also run the
-separate private privacy gate on that same candidate. Its term policy stays
-private; public CI checks the public structural and secret gates only.
+```bash
+bash tests/add_to_path_test.sh
+python3 -I tests/explicit_destinations_test.py
+python3 -I tests/startup_discovery_test.py
+python3 -I scripts/scan_public.py --root .
+```
 
-Original retained content is MIT licensed; see [LICENSE](LICENSE).
-The owner has confirmed redistribution rights for the retained content.
-External programs and plugins retain their own licenses; that confirmation
-does not extend to separately installed dependencies.
+The tests cover the PATH helper, the helpers' destination options, and
+`DOTFILE_DIR` and version-pin handling. The scan needs Gitleaks 8.16.0 and is
+the only check CI runs; see the [scan policy](docs/public_scan.md). Check changed shell files with `bash -n`
+and `shellcheck`, or `zsh -n` for zsh files. There is nothing to compile.
+Before each release, the maintainers also run a private check for names and
+terms that must not be published.
+
+The original content is MIT licensed; see [LICENSE](LICENSE). The owner has
+confirmed the right to redistribute it. External programs and plugins keep
+their own licenses; that confirmation does not cover dependencies you install
+separately.
