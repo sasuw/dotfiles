@@ -159,6 +159,8 @@ flowchart LR
   loads only `00-personal-root.sh`, `01-personal-env.sh`, `java-exports.sh`
   and the Maven includes from it. The helper scripts below and
   `zz-personal-settings.sh` therefore affect zsh only.
+- The SSH shell include resets terminal colors after an interactive `ssh`
+  command exits. Open a new zsh after restowing to load the `ssh` function.
 - `.zshenv` loads `.zshvars`, `.zshversions`, `.bin/common.sh` and
   `.bin/lib/dotfiles_root.sh`. If your personal repository overrides one of
   these files, keep it compatible with the others.
