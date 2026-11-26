@@ -1,0 +1,30 @@
+[core]
+	excludesfile = ~/.gitignore_global
+	pager = cat
+[alias]
+	permission-reset = !git diff -p -R --no-ext-diff --no-color | grep -E \"^(diff|(old|new) mode)\" --color=never | git apply
+	hs = log --pretty='%C(yellow)%h %C(cyan)%cd %Cblue%aN%C(auto)%d %Creset%s' --graph --date=iso --date-order
+	move-tag = "!f() { git tag -f \"$1\" \"$2\" && git push origin -f \"$1\"; }; f"
+[diff]
+	tool = meld
+[user]
+	useConfigOnly = true
+[init]
+	defaultBranch = main
+[pull]
+	rebase = false
+	ff = only
+[push]
+	autoSetupRemote = true
+[merge]
+	tool = meld
+[http]
+	lowSpeedLimit = 0
+	lowSpeedTime = 0
+	connectTimeout = 10
+	postBuffer = 524288000
+[include]
+	path = ~/Projects/github.com/GitAlias/gitalias/gitalias.txt
+	path = ~/.gitconfig-private
+	path = ~/.gitconfig-company
+	path = ~/.gitconfig-projects

@@ -40,6 +40,12 @@ When both repositories provide the same file, for example `~/.zshrc`, your
 personal copy wins as a whole. See
 [Personal configuration](#add-your-personal-configuration).
 
+Git uses one shared `~/.gitconfig` from this repository. It loads optional
+`~/.gitconfig-private`, `~/.gitconfig-company` and `~/.gitconfig-projects`
+files, so higher layers can add settings without replacing the shared file.
+The shared config sets `user.useConfigOnly`; put author identities in the
+appropriate private include. Git refuses commits where no identity applies.
+
 ## Install
 
 ### What you need
